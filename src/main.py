@@ -3,7 +3,7 @@ import dropbox
 import os
 import time
 import uuid
-from dyndns import DynDnsIpExtractor
+import ipextractor
 from tokenprovider import gettoken
 from datetime import datetime
 
@@ -16,7 +16,7 @@ print("{} [  CHECK INTERVAL] :: {} min.".format(datetime.now(), check_interval_m
 try:
     oauth2_access_token = gettoken()
     print("{} [         DROPBOX] :: access token retrieved.".format(datetime.now()))
-except expression as ex:
+except Exception as ex:
     print("{} [         DROPBOX] :: Unable to retrieve access token: {}".format(datetime.now(), str(ex)))
     exit(1)
 
@@ -29,9 +29,20 @@ except Exception as ex:
     exit(1)
 
 check_ip_url = os.getenv('CHECK_IP_URL', 'http://checkip.dyndns.it')
-print("{} [        CHECK IP] :: {}".format(datetime.now(), check_ip_url))
+print("{} [    CHECK IP URL] :: {}".format(datetime.now(), check_ip_url))
 
+check_ip_service = os.getenv('CHECK_IP_SERVICE', 'dyndns').lower().strip()
+print("{} [CHECK IP SERVICE] :: {} (available services: {})".format(datetime.now(), check_ip_service, ipextractor.AvailableServices))
 
+if check_ip_service not in ipextractor.AvailableServices:
+    print("{} [CHECK IP SERVICE] :: {} is not a supported service".format(datetime.now(), check_ip_service))
+    exit(1)
+
+try:
+    ip_extractor = ipextractor.IpExtractorFactory(check_ip_service)
+except Exception as ex:
+    print("{} [    IP EXTRACTOR] :: Error getting the right ip extractor: {}".format(datetime.now(), str(ex)))
+    exit(1)
 
 while True:
     try:
@@ -39,7 +50,6 @@ while True:
         print("{} [        CHECK IP] :: <{} {}>".format(datetime.now(), response.status_code, response.reason))
 
         if response.status_code == requests.codes.ok:
-            ip_extractor = DynDnsIpExtractor()
             try:
                 ip_extractor.feed(response.text)
                 ip = ip_extractor.ip()
