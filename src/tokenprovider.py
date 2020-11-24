@@ -1,10 +1,10 @@
 import os
-import dropbox
 from dropbox import DropboxOAuth2FlowNoRedirect
 
-dpx_apikey    = os.environ['DPX_APIKEY']
+dpx_apikey = os.environ['DPX_APIKEY']
 dpx_apisecret = os.environ['DPX_APISECRET']
 dpx_tokenfile = "tokens/" + os.environ['DPX_TOKENFILE']
+
 
 def gettoken():
     try:

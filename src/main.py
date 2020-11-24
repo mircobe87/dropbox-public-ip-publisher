@@ -13,6 +13,7 @@ print("{} [     CLIENT NAME] :: {}".format(datetime.now(), current_client_name))
 check_interval_minutes = max(1, int(os.getenv('CHECK_INTERVAL_MIN', '30')))
 print("{} [  CHECK INTERVAL] :: {} min.".format(datetime.now(), check_interval_minutes))
 
+oauth2_access_token = ''
 try:
     oauth2_access_token = gettoken()
     print("{} [         DROPBOX] :: access token retrieved.".format(datetime.now()))
@@ -20,6 +21,7 @@ except Exception as ex:
     print("{} [         DROPBOX] :: Unable to retrieve access token: {}".format(datetime.now(), str(ex)))
     exit(1)
 
+dbx = None
 try:
     dbx = dropbox.Dropbox(oauth2_access_token=oauth2_access_token)
     account_info = dbx.users_get_current_account()
@@ -32,12 +34,14 @@ check_ip_url = os.getenv('CHECK_IP_URL', 'http://checkip.dyndns.it')
 print("{} [    CHECK IP URL] :: {}".format(datetime.now(), check_ip_url))
 
 check_ip_service = os.getenv('CHECK_IP_SERVICE', 'dyndns').lower().strip()
-print("{} [CHECK IP SERVICE] :: {} (available services: {})".format(datetime.now(), check_ip_service, ipextractor.AvailableServices))
+print("{} [CHECK IP SERVICE] :: {} (available services: {})".format(datetime.now(), check_ip_service,
+                                                                    ipextractor.AvailableServices))
 
 if check_ip_service not in ipextractor.AvailableServices:
     print("{} [CHECK IP SERVICE] :: {} is not a supported service".format(datetime.now(), check_ip_service))
     exit(1)
 
+ip_extractor = None
 try:
     ip_extractor = ipextractor.IpExtractorFactory(check_ip_service)
 except Exception as ex:
@@ -59,12 +63,14 @@ while True:
                         bytes(ip, 'utf-8'),
                         "/{}_public-ip.txt".format(current_client_name),
                         mute=True,
-                        mode=dropbox.files.WriteMode.overwrite
+                        mode=dropbox.dropbox.files.WriteMode.overwrite
                     )
-                    print("{} [         DROPBOX] :: File uploaded. <{}, {}>".format(datetime.now(), file_metadata.id, file_metadata.server_modified))
+                    print("{} [         DROPBOX] :: File uploaded. <{}, {}>".format(datetime.now(), file_metadata.id,
+                                                                                    file_metadata.server_modified))
 
                 except Exception as ex:
-                    print("{} [         DROPBOX] :: Error uploading file on the cloud: {}".format(datetime.now(), str(ex)))
+                    print("{} [         DROPBOX] :: Error uploading file on the cloud: {}".format(datetime.now(),
+                                                                                                  str(ex)))
 
             except Exception as e:
                 print("{} [    IP EXTRACTOR] :: {}".format(datetime.now(), str(e)))
@@ -77,5 +83,3 @@ while True:
     
     print("{} [           SLEEP] :: next check in {} minutes.".format(datetime.now(), check_interval_minutes))
     time.sleep(60 * check_interval_minutes)
-
-
