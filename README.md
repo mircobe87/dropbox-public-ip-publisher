@@ -1,7 +1,7 @@
 # Dropbox Public IP Publisher
 *A python application used to write on your DropBox account you public ip*
 
-Usefull you need to reach some services exposed on internet by a dynamic ip. In this case this little
+Useful you need to reach some services exposed on internet by a dynamic ip. In this case this little
 application can be run inside your private network and periodically updates a text file in your **DropBox**
 account putting inside it your public ip.
 
@@ -21,11 +21,48 @@ account putting inside it your public ip.
                     (*Default: http://checkip.dyndns.it*)
 
 Before use this tool you need to have a **Api Key** and a **Api Secret**.
-To achive this go to DropBox developer [page](https://www.dropbox.com/developers) then create you app.
+To achieve this go to DropBox developer [page](https://www.dropbox.com/developers) then create you app.
 Allow public client access and set a non-expiring token.
 Since this application writes a file, go to permission section and be sure that `files.content.write`
-sope is selected.
+scope is selected.
 
-At the first run, the application will ask you for an authorization code. To retrive that, simply follow the
+At the first run, the application will ask you for an authorization code. To retrieve that, simply follow the
 prompted steps otherwise you need to put an access token inside the related file in `src/tokens/`. You can
 generate an access token from you application settings [page](https://www.dropbox.com/developers/apps).
+
+## Docker
+*Running this application in a docker container.*
+
+Is also possible to "dockerize" this application building the image running the command:
+```
+docker build -f Dockerfile -t dropbox-publicip-publisher .
+```
+Then you can run a new container configuring the "dockerized" application setting up its environment variables:
+```
+docker run -d --name my-dropbox-publicip-publisher \
+           -e "DPX_APIKEY=..." \
+           -e "DPX_APISECRET=..." \
+           -e "DPX_TOKENFILE=..." \
+           -e "CLIENT_NAME=..." \
+           -e "CHECK_INTERVAL_MIN=..." \
+           -e "CHECK_IP_URL=..." \
+           -v /local/path/to/token/folder:/app/tokens
+           dropbox-publicip-publisher
+```
+In this example we have run the container in a detached way (`-d` option) thus you need to
+mount in `/app/tokens` a folder containing the token file where its name has been specified
+by `DPX_TOKENFILE` env. variable.
+
+If you run the container in a interactive way (replace `-d` to `-it`) the application will
+prompt you some steps to follow in order to authorize the application. After that the application
+will be able to retrieve the access token on its own so you don't need to mount anything.
+```
+docker run -it --name my-dropbox-publicip-publisher \
+           -e "DPX_APIKEY=..." \
+           -e "DPX_APISECRET=..." \
+           -e "DPX_TOKENFILE=..." \
+           -e "CLIENT_NAME=..." \
+           -e "CHECK_INTERVAL_MIN=..." \
+           -e "CHECK_IP_URL=..." \
+           dropbox-publicip-publisher
+```
