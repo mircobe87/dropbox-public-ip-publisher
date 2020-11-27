@@ -15,7 +15,7 @@ def gettoken():
             raise Exception()
         else:
             return token
-    except:
+    except Exception:
         f = open(dpx_tokenfile, 'a')
         token = _interactive_phase()
         f.writelines(token)

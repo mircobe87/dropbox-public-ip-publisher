@@ -43,7 +43,7 @@ if check_ip_service not in ipextractor.AvailableServices:
 
 ip_extractor = None
 try:
-    ip_extractor = ipextractor.IpExtractorFactory(check_ip_service)
+    ip_extractor = ipextractor.ip_extractor_factory(check_ip_service)
 except Exception as ex:
     print("{} [    IP EXTRACTOR] :: Error getting the right ip extractor: {}".format(datetime.now(), str(ex)))
     exit(1)
