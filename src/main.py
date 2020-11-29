@@ -1,85 +1,87 @@
-import requests
+import settings
+import my_logging
+import token_provider
+from public_ip_finder import public_ip_service
+
 import dropbox
 import os
 import time
-import uuid
-import ipextractor
-from tokenprovider import gettoken
-from datetime import datetime
 
-current_client_name = os.getenv('CLIENT_NAME', uuid.getnode())
-print("{} [     CLIENT NAME] :: {}".format(datetime.now(), current_client_name))
 
-check_interval_minutes = max(1, int(os.getenv('CHECK_INTERVAL_MIN', '30')))
-print("{} [  CHECK INTERVAL] :: {} min.".format(datetime.now(), check_interval_minutes))
+config = None
+try:
+    config = settings.AppSettings(
+        os.getenv("APP_DPX_APIKEY"),
+        os.getenv("APP_DPX_APISECRET"),
+        os.getenv("APP_DPX_TOKENFILE"),
+        os.getenv("APP_CLIENT_NAME"),
+        os.getenv("APP_CHECK_INTERVAL_MIN"),
+        os.getenv("APP_CHECK_SERVICE")
+    )
+
+    if not public_ip_service.check_service(config.check.service):
+        available_services = public_ip_service.get_all_services()
+        raise Exception("{} is not a service. Available services: {}".format(config.check.service, available_services))
+
+    my_logging.info("Configuration loaded.")
+    my_logging.debug(str(config))
+except Exception as e:
+    my_logging.error("Configuration error: {}".format(str(e)))
+    exit(1)
+
 
 oauth2_access_token = ''
 try:
-    oauth2_access_token = gettoken()
-    print("{} [         DROPBOX] :: access token retrieved.".format(datetime.now()))
+    tp = token_provider.TokenProvider(
+        config.dropbox.api_key,
+        config.dropbox.api_secret,
+        config.dropbox.token_file_name
+    )
+    oauth2_access_token = tp.token()
+    my_logging.info("Access token retrieved.")
+    my_logging.debug(oauth2_access_token)
 except Exception as ex:
-    print("{} [         DROPBOX] :: Unable to retrieve access token: {}".format(datetime.now(), str(ex)))
+    my_logging.error("Unable to retrieve access token: {}".format(str(ex)))
     exit(1)
+
 
 dbx = None
 try:
     dbx = dropbox.Dropbox(oauth2_access_token=oauth2_access_token)
     account_info = dbx.users_get_current_account()
-    print("{} [         DROPBOX] :: Access granted by user <{}>.".format(datetime.now(), account_info.email))
+    my_logging.info("Access granted by user <{}>.".format(account_info.email))
 except Exception as ex:
-    print("{} [         DROPBOX] :: Unable to retrieve account info: {}".format(datetime.now(), str(ex)))
+    my_logging.error("Unable to retrieve account info".format(str(ex)))
     exit(1)
 
-check_ip_url = os.getenv('CHECK_IP_URL', 'http://checkip.dyndns.it')
-print("{} [    CHECK IP URL] :: {}".format(datetime.now(), check_ip_url))
-
-check_ip_service = os.getenv('CHECK_IP_SERVICE', 'dyndns').lower().strip()
-print("{} [CHECK IP SERVICE] :: {} (available services: {})".format(datetime.now(), check_ip_service,
-                                                                    ipextractor.AvailableServices))
-
-if check_ip_service not in ipextractor.AvailableServices:
-    print("{} [CHECK IP SERVICE] :: {} is not a supported service".format(datetime.now(), check_ip_service))
-    exit(1)
-
-ip_extractor = None
-try:
-    ip_extractor = ipextractor.ip_extractor_factory(check_ip_service)
-except Exception as ex:
-    print("{} [    IP EXTRACTOR] :: Error getting the right ip extractor: {}".format(datetime.now(), str(ex)))
-    exit(1)
-
+ip_service = public_ip_service.get_service(config.check.service)
+cached_ip = None
 while True:
+    my_logging.info("Getting the current public ip...")
     try:
-        response = requests.get(check_ip_url, stream=True)
-        print("{} [        CHECK IP] :: <{} {}>".format(datetime.now(), response.status_code, response.reason))
+        current_ip = ip_service.get_public_ip()
 
-        if response.status_code == requests.codes.ok:
-            try:
-                ip_extractor.feed(response.text)
-                ip = ip_extractor.ip()
-                print("{} [    IP EXTRACTOR] :: Current public IP: {}".format(datetime.now(), ip))
+        if not public_ip_service.check_ip(current_ip):
+            my_logging.error("The service has returned an invalid ip: {}".format(current_ip))
+        else:
+            if current_ip != cached_ip:
+                my_logging.info("New IP found: {}".format(current_ip))
                 try:
                     file_metadata = dbx.files_upload(
-                        bytes(ip, 'utf-8'),
-                        "/{}_public-ip.txt".format(current_client_name),
+                        bytes(current_ip, 'utf-8'),
+                        "/{}_public-ip.txt".format(config.client.name),
                         mute=True,
                         mode=dropbox.dropbox.files.WriteMode.overwrite
                     )
-                    print("{} [         DROPBOX] :: File uploaded. <{}, {}>".format(datetime.now(), file_metadata.id,
-                                                                                    file_metadata.server_modified))
-
+                    my_logging.info("New IP updated on DropBox")
+                    my_logging.debug("{}, {}".format(file_metadata.id, file_metadata.server_modified))
+                    cached_ip = current_ip
                 except Exception as ex:
-                    print("{} [         DROPBOX] :: Error uploading file on the cloud: {}".format(datetime.now(),
-                                                                                                  str(ex)))
-
-            except Exception as e:
-                print("{} [    IP EXTRACTOR] :: {}".format(datetime.now(), str(e)))
-
-        else:
-            print("{} [        CHECK IP] :: Unable to retrieve the current public IP".format(datetime.now()))
-
+                    my_logging.error("Error updating the IP on DropBox: {}".format(str(ex)))
+            else:
+                my_logging.info("The current IP is not changed since last check. No updating needed.")
     except Exception as ex:
-        print("{} [        CHECK IP] :: Request error: {}".format(datetime.now(), str(ex)))
-    
-    print("{} [           SLEEP] :: next check in {} minutes.".format(datetime.now(), check_interval_minutes))
-    time.sleep(60 * check_interval_minutes)
+        my_logging.error("Unable to retrieve the current public IP: {}".format(str(ex)))
+
+    my_logging.info("Next check in {} minutes.".format(config.check.interval))
+    time.sleep(60 * config.check.interval)
