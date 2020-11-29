@@ -7,6 +7,10 @@ def get_all_services():
     return public_values
 
 
+def check_service(name):
+    return name in get_all_services()
+
+
 def get_service(name):
     fully_qualified_name = "{}.service.{}.PublicIpService".format(parent_name, name)
     service = _get_object(fully_qualified_name)
