@@ -1,3 +1,4 @@
+import re
 parent_name = '.'.join(__name__.split('.')[:-1])
 
 
@@ -15,6 +16,16 @@ def get_service(name):
     fully_qualified_name = "{}.service.{}.PublicIpService".format(parent_name, name)
     service = _get_object(fully_qualified_name)
     return service()
+
+
+def check_ip(ip_str):
+    pattern = re.compile(
+        '^(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[0-9]?[0-9])[.]'
+        '(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[0-9]?[0-9])[.]'
+        '(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[0-9]?[0-9])[.]'
+        '(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[0-9]?[0-9])$'
+    )
+    return pattern.fullmatch(ip_str) is not None
 
 
 def _get_object(fully_qualified_name):
