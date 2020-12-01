@@ -17,7 +17,8 @@ class DropBoxSettings:
 
         self.api_key = api_key
         self.api_secret = api_secret
-        self.token_file_name = self.TOKEN_LOCATION + (token_file_name if not None else DEFAULT_TOKEN_FILE_NAME)
+        self.token_file_name = self.TOKEN_LOCATION + (
+            token_file_name if token_file_name is not None else DEFAULT_TOKEN_FILE_NAME)
 
     def __str__(self):
         return (
@@ -28,8 +29,8 @@ class DropBoxSettings:
 class CheckSettings:
 
     def __init__(self, interval, service_name):
-        self.interval = int(interval) if not None else DEFAULT_CHECK_INTERVAL
-        self.service = service_name if not None else DEFAULT_CHECK_SERVICE
+        self.interval = int(interval if interval is not None else DEFAULT_CHECK_INTERVAL)
+        self.service = service_name if service_name is not None else DEFAULT_CHECK_SERVICE
 
     def __str__(self):
         return "CheckSettings[service: {}, interval: {}]".format(self.service, self.interval)
@@ -38,7 +39,7 @@ class CheckSettings:
 class ClientSettings:
 
     def __init__(self, name):
-        self.name = name if not None else DEFAULT_CLIENT_NAME
+        self.name = name if name is not None else DEFAULT_CLIENT_NAME
 
     def __str__(self):
         return "ClientSettings[name: {}]".format(self.name)
