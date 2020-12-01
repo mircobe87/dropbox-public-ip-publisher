@@ -1,4 +1,5 @@
 import uuid
+import os
 
 DEFAULT_TOKEN_FILE_NAME = "dpx.token"
 DEFAULT_CHECK_INTERVAL = 30  # minutes
@@ -55,3 +56,19 @@ class AppSettings:
         return (
             "AppSettings[dropbox: {}, check: {}, client: {}]"
         ).format(str(self.dropbox), str(self.check), str(self.client))
+
+
+def retrieve_tmp_data(tmp_filename):
+    data = None
+    full_path = "/tmp/{}".format(tmp_filename)
+    try:
+        f = open(full_path, 'r')
+        data = "\n".join(f.readlines())
+        f.close()
+    except Exception as e:
+        print("{}: {}".format(full_path, str(e)))
+
+    if os.path.exists(full_path):
+        os.remove(full_path)
+
+    return data
