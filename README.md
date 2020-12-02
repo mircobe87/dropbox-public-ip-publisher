@@ -11,7 +11,7 @@ application can be run inside your private network and periodically it updates a
 + **APP_DPX_APIKEY**: The api key used to interact to Dropbox API's
 + **APP_DPX_APISECRET**: The api secret used to interact to Dropbox API's
 + **APP_DPX_TOKENFILE**: After the first run, the requested access token is stored into a local text
-  file located into `src/tokens/` folder. This variable defines its name.
+  file located into `src/tokens/` folder. This variable defines its name. (*Default: `dpx.token`*)
 + **APP_CLIENT_NAME**: Defines the name to identify this client. This value is also used as prefix in
   the name of the file created on DropBox. (*Default: an integer generated from MAC address*)
 + **APP_CHECK_INTERVAL_MIN**: Defines the length of the checking interval period in minutes.
@@ -24,7 +24,7 @@ application can be run inside your private network and periodically it updates a
   `info` and `error`. (*Default: `info`*)
 
 Before to use this tool you need to have a **Api Key** and a **Api Secret**.
-To achieve this go to DropBox developer [page](https://www.dropbox.com/developers) then create you app.
+To achieve this go to DropBox developer [page](https://www.dropbox.com/developers) then create your app.
 Allow public client access and set a non-expiring token.
 Since this application writes a file, go to permission section and be sure that `files.content.write`
 scope is selected.
@@ -72,3 +72,16 @@ docker run -it --name my-dropbox-publicip-publisher \
            -e "APP_LOG_LEVEL=..." \
            dropbox-publicip-publisher
 ```
+If you don't want to share your dropbox **api_key** and **api_secret**, you can inject those values at build time. You
+need to create two text files within your **api_key** and **api_secret** respectively. During the build set the build
+arguments `api_key_file` and `api_sectret_file` with the path to your file related to the build context:
+```
+docker build --build-arg api_key_file=./my-secrets/my-api-key.txt \
+             --build-arg api_secret_file=./my-secrets/my-api-secret.txt \
+             -f Dockerfile -t dropbox-publicip-publisher .
+``` 
+In this way your files will be present into the container at runtime and immediately after the application started,
+they will be read and removed.
+
+So, to run a container from an image built as before you have to omit `APP_DPX_APIKEY` and `APP_DPX_APISECRET`
+environment variables.

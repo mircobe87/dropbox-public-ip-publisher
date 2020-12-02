@@ -15,8 +15,8 @@ if __name__ == "__main__":
     config = None
     try:
         config = settings.AppSettings(
-            os.getenv("APP_DPX_APIKEY"),
-            os.getenv("APP_DPX_APISECRET"),
+            os.getenv("APP_DPX_APIKEY") or settings.retrieve_tmp_data("api_key"),
+            os.getenv("APP_DPX_APISECRET") or settings.retrieve_tmp_data("api_secret"),
             os.getenv("APP_DPX_TOKENFILE"),
             os.getenv("APP_CLIENT_NAME"),
             os.getenv("APP_CHECK_INTERVAL_MIN"),
