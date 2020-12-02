@@ -74,10 +74,10 @@ docker run -it --name my-dropbox-publicip-publisher \
 ```
 If you don't want to share your dropbox **api_key** and **api_secret**, you can inject those values at build time. You
 need to create two text files within your **api_key** and **api_secret** respectively. During the build set the build
-arguments `api_key` and `api_sectret` with the path to your file related to the build context:
+arguments `api_key_file` and `api_sectret_file` with the path to your file related to the build context:
 ```
-docker build --build-arg api_key=./my-secrets/my-api-key.txt \
-             --build-arg api_secret=./my-secrets/my-api-key.txt \
+docker build --build-arg api_key_file=./my-secrets/my-api-key.txt \
+             --build-arg api_secret_file=./my-secrets/my-api-secret.txt \
              -f Dockerfile -t dropbox-publicip-publisher .
 ``` 
 In this way your files will be present into the container at runtime and immediately after the application started,
