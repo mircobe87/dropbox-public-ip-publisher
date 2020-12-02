@@ -64,7 +64,7 @@ def retrieve_tmp_data(tmp_filename):
     full_path = "/tmp/{}".format(tmp_filename)
     try:
         f = open(full_path, 'r')
-        data = "\n".join(f.readlines())
+        data = "\n".join(f.readlines()).rstrip("\n")
         f.close()
     except Exception as e:
         print("{}: {}".format(full_path, str(e)))
