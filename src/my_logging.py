@@ -7,6 +7,9 @@ LVL_ERR = {"name": "ERROR", "value": 3}
 
 
 def log_level_from_name(level_name):
+    if level_name is None:
+        return None
+
     input_level = str(level_name).strip().upper()
     if input_level == LVL_DBG["name"]:
         return LVL_DBG
