@@ -59,7 +59,8 @@ mount in `/app/tokens` a folder containing the token file where its name has bee
 by `APP_DPX_TOKENFILE` env. variable.
 
 If you run the container in a interactive way (replace `-d` to `-it`) the application will
-prompt you some steps to follow in order to authorize the application. After that the application
+prompt you some steps to follow in order to authorize the application. To detach from the container
+and leave it running using the `CTRL-p CTRL-q` key sequence. After that the application
 will be able to retrieve the access token on its own so you don't need to mount anything.
 ```
 docker run -it --name my-dropbox-publicip-publisher \
